@@ -15,3 +15,5 @@
 # Divio
 .divio
 /data.tar.gz
+
+.env
