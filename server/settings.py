@@ -55,6 +55,7 @@ THIRD_PARTY_APPS = [
     "django_filters",
     "taggit",
     "corsheaders",
+    "drf_yasg"
 ]
 
 USER_APPS = [

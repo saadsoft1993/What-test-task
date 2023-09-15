@@ -1,7 +1,7 @@
 from django.db.models import Avg
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter
-from rest_framework.generics import ListAPIView, RetrieveAPIView, CreateAPIView
+from rest_framework.generics import ListAPIView, RetrieveAPIView, CreateAPIView, DestroyAPIView
 
 from video_management.filters import VideoFilter
 from video_management.models import Video, Rating
@@ -19,6 +19,10 @@ class VideoListAPIView(ListAPIView):
 class VideoDetailAPIView(RetrieveAPIView):
     queryset = Video.objects.all()
     serializer_class = VideoModelSerializer
+
+
+class VideoDestroyAPIView(DestroyAPIView):
+    queryset = Video.objects.all()
 
 
 class RatingCreateAPIView(CreateAPIView):
