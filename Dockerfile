@@ -8,4 +8,5 @@ RUN pip install -r requirements.txt
 
 RUN python manage.py migrate
 
+EXPOSE 80
 CMD gunicorn --bind=0.0.0.0:80 --forwarded-allow-ips="*" server.wsgi
