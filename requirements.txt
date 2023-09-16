@@ -7,3 +7,4 @@ django-cors-headers==4.2.0
 django-filter==23.2
 django-taggit==4.0.0
 drf-yasg==1.21.7
+gunicorn
