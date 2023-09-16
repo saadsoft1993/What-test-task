@@ -9,33 +9,39 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
-from datetime import timedelta
-from pathlib import Path
-
+import os
 import environ
+from datetime import timedelta
+from django_storage_url import dsn_configured_storage_class
 
-env = environ.Env(
-    # set casting, default value
-    DEBUG=(bool, False)
-)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
-
-
-# Reading env
-environ.Env.read_env(BASE_DIR / '.env')
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+env = environ.Env()
+environ.Env.read_env(env_file=os.path.join(BASE_DIR, '.env'))
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = env('SECRET_KEY')
+SECRET_KEY = os.environ.get('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env('DEBUG')
+DEBUG = os.environ.get('DEBUG') == "True"
 
-ALLOWED_HOSTS = env('ALLOWED_HOSTS').split(',')
+DIVIO_DOMAIN = os.environ.get('DOMAIN', '')
+DIVIO_DOMAIN_ALIASES = [
+    d.strip()
+    for d in os.environ.get('DOMAIN_ALIASES', '').split(',')
+    if d.strip()
+]
+DIVIO_DOMAIN_REDIRECTS = [
+    d.strip()
+    for d in os.environ.get('DOMAIN_REDIRECTS', '').split(',')
+    if d.strip()
+]
+
+ALLOWED_HOSTS = [DIVIO_DOMAIN] + DIVIO_DOMAIN_ALIASES + DIVIO_DOMAIN_REDIRECTS
+
+# Redirect to HTTPS by default, unless explicitly disabled
+SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'False') != "False"
 
 
 # Application definition
@@ -67,6 +73,7 @@ INSTALLED_APPS = BUILT_IN_APPS + THIRD_PARTY_APPS + USER_APPS
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -103,10 +110,10 @@ WSGI_APPLICATION = 'server.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': env('DATABASE_NAME'),
-        'USER': env('DATABASE_USERNAME'),
-        'PASSWORD': env('DATABASE_PASSWORD'),
-        'HOST': env('DATABASE_HOST'),
+        'NAME': os.environ.get('DATABASE_NAME'),
+        'USER': os.environ.get('DATABASE_USERNAME'),
+        'PASSWORD': os.environ.get('DATABASE_PASSWORD'),
+        'HOST': os.environ.get('DATABASE_HOST'),
         'PORT': '5432',
     }
 }
@@ -140,16 +147,18 @@ TIME_ZONE = 'UTC'
 
 USE_I18N = True
 
+USE_L10N = True
+
 USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = 'static/'
-STATIC_ROOT = 'static'
-# Default primary key field type
-# https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -177,3 +186,16 @@ REST_FRAMEWORK = {
 }
 
 CORS_ALLOW_ALL_ORIGINS = True
+
+# read the setting value from the environment variable
+DEFAULT_STORAGE_DSN = os.environ.get('DEFAULT_STORAGE_DSN', '')
+
+# dsn_configured_storage_class() requires the name of the setting
+DefaultStorageClass = dsn_configured_storage_class('DEFAULT_STORAGE_DSN')
+
+# Django's DEFAULT_FILE_STORAGE requires the class name
+DEFAULT_FILE_STORAGE = 'server.settings.DefaultStorageClass'
+
+# only required for local file storage and serving, in development
+MEDIA_URL = 'media/'
+MEDIA_ROOT = os.path.join('/data/media/')

@@ -5,8 +5,6 @@ WORKDIR /app
 # copy the repository files to it
 COPY . /app
 RUN pip install -r requirements.txt
-
+RUN python manage.py collectstatic --noinput
 RUN python manage.py migrate
-RUN python manage.py collectstatic --no-input
-EXPOSE 80
-CMD gunicorn --bind=0.0.0.0:80 --forwarded-allow-ips="*" server.wsgi
+CMD uwsgi --http=0.0.0.0:80 --module=server.wsgi
