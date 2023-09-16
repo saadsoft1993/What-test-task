@@ -1,13 +1,11 @@
-FROM python:3.10.12
-RUN apt-get update
-# set the working directory
-WORKDIR /app
-# copy the repository files to it
-COPY . /app
-RUN pip install -r requirements.txt
+FROM nginx:latest
 
-RUN python manage.py migrate
-RUN python manage.py loaddata product.json
+# noop for legacy migration
+RUN mkdir /app && \
+    echo "#!/bin/bash" > /app/migrate.sh && \
+    chmod +x /app/migrate.sh
+
+COPY nginx.conf /etc/nginx/nginx.conf
+COPY html /usr/share/nginx/html
 
 EXPOSE 80
-CMD gunicorn --bind=0.0.0.0:80 --forwarded-allow-ips="*" server.wsgi
